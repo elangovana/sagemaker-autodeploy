@@ -34,7 +34,7 @@
     "VariantName": {
       "Type": "String",
       "Default": "Initial",
-      "Description": "The ML compute instance type to use for this production variant."
+      "Description": "The name of the production variant."
     },
     "AutoscaleCoolDownPeriod": {
       "Type": "Number",
