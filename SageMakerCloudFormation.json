@@ -1,0 +1,96 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Deploys Sagemaker model, ",
+    "Metadata": {},
+    "Parameters": {
+        "Name": {
+            "Type": "String",
+            "Description": "A suffix to use for all recources created by this stack"
+        },
+        "ModelS3Url": {
+            "Type": "String",
+            "Description": "The Model url"
+        },
+        "ContainerImage": {
+            "Type": "String",
+            "Description": "The Amazon EC2 Container Registry (Amazon ECR) path where inference code is stored"
+        },
+        "ModelExecutionRoleArn": {
+            "Type": "String",
+            "Description": "The Amazon Resource Name (ARN) of the IAM role that Amazon SageMaker can assume to access model artifacts and docker image for deployment on ML compute instance"
+        },
+        "MinInstance": {
+            "Type": "Number",
+            "Description": "The number of instances to launch initially for this production variant"
+        },
+        "InstanceType": {
+            "Type": "String",
+            "Description": "The ML compute instance type to use for this production variant."
+        }
+    },
+    "Mappings": {},
+    "Conditions": {},
+    "Resources": {
+        "SagemakerModel": {
+            "Type": "AWS::SageMaker::Model",
+            "Properties": {
+                "ExecutionRoleArn": {
+                    "Ref": "ModelExecutionRoleArn"
+                },
+                "ModelName": {
+                    "Ref": "Name"
+                },
+                "PrimaryContainer": {
+                    "Environment": {},
+                    "ModelDataUrl": {
+                        "Ref": "ModelS3Url"
+                    },
+                    "Image": {
+                        "Ref": "ContainerImage"
+                    }
+                }
+            }
+        },
+        "Endpoint": {
+            "Type": "AWS::SageMaker::Endpoint",
+            "Properties": {
+                "EndpointName": {
+                    "Ref": "Name"
+                },
+                "EndpointConfigName": {
+                    "Fn::GetAtt": [
+                        "EndpointConfig",
+                        "EndpointConfigName"
+                    ]
+                }
+            }
+        },
+        "EndpointConfig": {
+            "Type": "AWS::SageMaker::EndpointConfig",
+            "Properties": {
+                "EndpointConfigName": {
+                    "Ref": "Name"
+                },
+                "ProductionVariants": [
+                    {
+                        "ModelName": {
+                            "Fn::GetAtt": [
+                                "SagemakerModel",
+                                "ModelName"
+                            ]
+                        },
+                        "VariantName": "Initial",
+                        "InitialInstanceCount": {
+                            "Ref": "MinInstance"
+                        },
+                        "InstanceType": {
+                            "Ref": "InstanceType"
+                        },
+                        "InitialVariantWeight": 1
+                    }
+                ]
+            }
+        }
+    },
+    "Outputs": {}
+}
