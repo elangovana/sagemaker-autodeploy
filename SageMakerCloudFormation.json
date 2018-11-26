@@ -114,6 +114,7 @@
     },
     "AutoScalingTargetSagemaker": {
       "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+      "DependsOn": "Endpoint",
       "Properties": {
         "MaxCapacity": {
           "Ref": "MaxInstance"
@@ -152,6 +153,7 @@
     },
     "AutoScalingPolicy": {
       "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+      "DependsOn" : "AutoScalingTargetSagemaker",
       "Properties": {
         "PolicyName": {
           "Ref": "Name"
