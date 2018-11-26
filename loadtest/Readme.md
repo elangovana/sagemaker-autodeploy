@@ -12,7 +12,7 @@
     ```
 
 ## Run Loadtest
-1. Update the config
+1. In the stress.py, update the config which includes the endpoint name and the data to use for load testing..
 
 1. Kick off loadttest. In this example below, the region is https://runtime.sagemaker.ap-southeast-2.amazonaws.com
     
