@@ -17,6 +17,26 @@
     ```bash
     pip install -r requirements.txt
     ```
+    
+2. AWS Credentials
+
+   - In order to get this to work, please ensure that you have configured the aws credentials to have permissions to invoke endpoint. To set up boto3 to work with aws credentials, see see  https://boto3.amazonaws.com/v1/documentation/api/latest/guide/configuration.html.
+   - The user should have permission to invoke the endpoint. In this example below, the user will have permission to invoke the endpoint named "myendpoint", in region "ap-southeast-2".
+   ```json
+    {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Sid": "sagamakerinvokeendpoint",
+                "Effect": "Allow",
+                "Action": "sagemaker:InvokeEndpoint",
+                "Resource": "arn:aws:sagemaker:ap-southeast-2:*:endpoint/myendpoint"
+            }
+        ]
+    }
+    ```
+   
+  
 
 ## Run Loadtest
 1. In the [config.json](config.json), update the config which includes the endpoint name and the data to use for load testing..
