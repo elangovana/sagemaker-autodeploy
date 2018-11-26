@@ -13,7 +13,7 @@
     },
     "ContainerImage": {
       "Type": "String",
-      "Description": "The Amazon EC2 Container Registry (Amazon ECR) path where inference code is stored"
+      "Description": "The Amazon EC2 Container Registry (Amazon ECR) path where inference code is stored. E.g 514117268639.dkr.ecr.ap-southeast-2.amazonaws.com/forecasting-deepar:latest"
     },
     "MinInstance": {
       "Type": "Number",
@@ -25,7 +25,7 @@
     },
     "InstanceType": {
       "Type": "String",
-      "Description": "The ML compute instance type to use for this production variant."
+      "Description": "The ML compute instance type to use for this production variant.E.g ml.m4.xlarge"
     },
     "VariantName": {
       "Type": "String",
@@ -154,9 +154,7 @@
       "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
       "DependsOn": "AutoScalingTargetSagemaker",
       "Properties": {
-        "PolicyName": {
-          "Ref": "Name"
-        },
+        "PolicyName":"SageMakerEndpointInvocationScalingPolicy",
         "PolicyType": "TargetTrackingScaling",
         "ScalingTargetId": {
           "Ref": "AutoScalingTargetSagemaker"
