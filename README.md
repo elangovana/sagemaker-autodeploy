@@ -1,5 +1,5 @@
 # Sagemaker deploy endpoint with cloudformation
-Creates a automated deployment template using Cloudformation and codepipeline
+This deploys a SageMaker endpoint with autoscaling.
 
 ## Deploy
 1. Use cloudformation to deploy the stack using template [SageMakerCloudFormation.json](SageMakerCloudFormation.json).
