@@ -15,10 +15,6 @@
       "Type": "String",
       "Description": "The Amazon EC2 Container Registry (Amazon ECR) path where inference code is stored"
     },
-    "ModelExecutionRoleArn": {
-      "Type": "String",
-      "Description": "The Amazon Resource Name (ARN) of the IAM role that Amazon SageMaker can assume to access model artifacts and docker image for deployment on ML compute instance"
-    },
     "MinInstance": {
       "Type": "Number",
       "Description": "The number of instances to launch initially for this production variant"
@@ -54,7 +50,10 @@
       "Type": "AWS::SageMaker::Model",
       "Properties": {
         "ExecutionRoleArn": {
-          "Ref": "ModelExecutionRoleArn"
+          "Fn::GetAtt": [
+            "SageMakerExecutionRole",
+            "Arn"
+          ]
         },
         "ModelName": {
           "Ref": "Name"
@@ -153,7 +152,7 @@
     },
     "AutoScalingPolicy": {
       "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
-      "DependsOn" : "AutoScalingTargetSagemaker",
+      "DependsOn": "AutoScalingTargetSagemaker",
       "Properties": {
         "PolicyName": {
           "Ref": "Name"
@@ -242,6 +241,128 @@
         ],
         "RoleName": {
           "Ref": "Name"
+        }
+      }
+    },
+    "SageMakerExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "sagemaker.amazonaws.com"
+              },
+              "Action": [
+                "sts:AssumeRole"
+              ]
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "SagemakerDeployPolicy",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "cloudwatch:PutMetricData",
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents",
+                    "logs:CreateLogGroup",
+                    "logs:DescribeLogStreams",
+                    "ecr:GetAuthorizationToken"
+                  ],
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:GetObject"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:aws:s3:::",
+                          {
+                            "Fn::Select": [
+                              "1",
+                              {
+                                "Fn::Split": [
+                                  "//",
+                                  {
+                                    "Ref": "ModelS3Url"
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:HeadBucket",
+                    "s3:ListBucket"
+                  ],
+                  "Resource": [
+                    {
+                      "Fn::Join": [
+                        "",
+                        [
+                          "arn:aws:s3:::",
+                          {
+                            "Fn::Select": [
+                              "2",
+                              {
+                                "Fn::Split": [
+                                  "/",
+                                  {
+                                    "Ref": "ModelS3Url"
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ecr:BatchCheckLayerAvailability",
+                    "ecr:GetDownloadUrlForLayer",
+                    "ecr:BatchGetImage"
+                  ],
+                  "Resource": [
+                    "arn:aws:ecr:::repository/*"
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "RoleName": {
+          "Fn::Join": [
+            "_",
+            [
+              {
+                "Ref": "Name"
+              },
+              "SageMakerDeployRole"
+            ]
+          ]
         }
       }
     }
