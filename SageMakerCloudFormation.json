@@ -1,7 +1,42 @@
 {
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "Deploys Sagemaker model, ",
-  "Metadata": {},
+  "Metadata": {
+    "AWS::CloudFormation::Interface": {
+      "ParameterGroups": [
+        {
+          "Label": {
+            "default": "General"
+          },
+          "Parameters": [
+            "Name"
+          ]
+        },
+        {
+          "Label": {
+            "default": "Model details"
+          },
+          "Parameters": [
+            "ContainerImage",
+            "ModelS3Url"
+          ]
+        },
+        {
+          "Label": {
+            "default": "Sagemaker auto scaling configuration"
+          },
+          "Parameters": [
+            "InstanceType",
+            "MinInstance",
+            "MaxInstance",
+            "AutoscaleCoolDownPeriod",
+            "SageMakerVariantInvocationsPerInstance",
+            "VariantName"
+          ]
+        }
+      ]
+    }
+  },
   "Parameters": {
     "Name": {
       "Type": "String",
@@ -9,7 +44,7 @@
     },
     "ModelS3Url": {
       "Type": "String",
-      "Description": "The Model url"
+      "Description": "The Model url. e.g s3://mybucket-sagemaker/model.tar.gz"
     },
     "ContainerImage": {
       "Type": "String",
@@ -154,7 +189,7 @@
       "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
       "DependsOn": "AutoScalingTargetSagemaker",
       "Properties": {
-        "PolicyName":"SageMakerEndpointInvocationScalingPolicy",
+        "PolicyName": "SageMakerEndpointInvocationScalingPolicy",
         "PolicyType": "TargetTrackingScaling",
         "ScalingTargetId": {
           "Ref": "AutoScalingTargetSagemaker"
