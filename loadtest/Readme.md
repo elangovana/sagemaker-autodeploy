@@ -3,13 +3,14 @@
 ## Pre-requisites
 
 1. Install Python 3.5
+
 2. Setup virtual environment. This example is for bash and OsX
-```bash
-python -m pip install --user virtualenv
-mkdir ~/virtualenvironment
-python -m virtualenv  ~/virtualenvironment/sagemakerloadatest
-source ~/virtualenvironment/sagemakerloadatest/bin/activate
-```
+    ```bash
+    python -m pip install --user virtualenv
+    mkdir ~/virtualenvironment
+    python -m virtualenv  ~/virtualenvironment/sagemakerloadatest
+    source ~/virtualenvironment/sagemakerloadatest/bin/activate
+    ```
 
 ## Setup
 1. Install dependencies
