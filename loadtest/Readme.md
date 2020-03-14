@@ -41,7 +41,7 @@
 ## Run Loadtest
 1. In the [config.json](config.json), update the config which includes the endpoint name and the data to use for load testing..
 
-1. Kick off loadttest. In this example below, the region is https://runtime.sagemaker.ap-southeast-2.amazonaws.com and the number of  Locust users to spawn ( -c 1000) , and -r specifies the hatch rate (number of users to spawn per second)
+1. Kick off load test. In this example below, the region is https://runtime.sagemaker.ap-southeast-2.amazonaws.com and the number of  Locust users to spawn ( -c 1000) , and -r specifies the hatch rate (number of users to spawn per second)
     
     ```bash
     locust -f loadtest/stress.py --host=https://runtime.sagemaker.ap-southeast-2.amazonaws.com --no-web -c 1000 -r 100 
