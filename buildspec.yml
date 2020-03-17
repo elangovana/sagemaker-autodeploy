@@ -1,0 +1,43 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - apt-get update
+      - apt-get install zip
+  pre_build:
+    commands:
+      - pip install pytest==3.6.3
+      - pip install pyflakes==2.0.0
+      - export projectname=sagemaker_deploy
+      - echo Building project $projectname
+      - export base_dir=$CODEBUILD_SRC_DIR/lambda
+
+  build:
+    commands:
+
+
+      - pip install -r $base_dir/source/requirements.txt
+      #- pip install -r  deployment/tests/requirements.txt
+      #- pyflakes $base_dir/**/*.py
+      - export PYTHONPATH=$base_dir/source
+      # - pytest $base_dir
+
+      - echo creating package
+
+       # Create copy dir
+      - mkdir $CODEBUILD_SRC_DIR/buildoutput
+      - cp -R $base_dir/source/*  $CODEBUILD_SRC_DIR/buildoutput
+
+      # Package raw as is
+      - cd $base_dir/source && tar -cv . | gzip > $CODEBUILD_SRC_DIR/buildoutput/source.tar.gz
+      # Package with dependencies
+      - pip install -r  $base_dir/source/requirements.txt  -t  $base_dir/source/
+      - cd $base_dir/source/ && zip -r $CODEBUILD_SRC_DIR/buildoutput/package.zip .
+
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: buildoutput
+  name: ${projectname}_$(date +%Y%m%d%H%M%S)_$CODEBUILD_SOURCE_VERSION

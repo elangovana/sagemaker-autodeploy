@@ -1,0 +1,215 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+
+    - Label:
+        default: Lambda functions set up
+      Parameters:
+      - s3BucketLambdaCode
+      - s3BucketLambdacodeKey
+      - lambdaSagemakerFuncName
+      - lambdaEnvSagemakerEndpointName
+
+    - Label:
+        default: Apigateway set up
+      Parameters:
+      - s3BucketApiGatewaySwagger
+      - apigatewayName
+      - apigatewayStage
+
+
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  s3BucketLambdaCode:
+    Description: The name of the s3 bucket that holds the code
+    Type: String
+    AllowedPattern: "[A-Za-z0-9-]+"
+  s3BucketLambdacodeKey:
+    Description: The name of the s3 key (zip file) within the bucket that holds the
+      code for sagemaker invocation
+    Type: String
+    AllowedPattern: ".+zip"
+
+  lambdaSagemakerFuncName:
+    Description: The name of an existing Sagemaker lambda function.
+    Type: String
+  lambdaEnvSagemakerEndpointName:
+    Description: The name of an existing Sagemaker lambda function.
+    Type: String
+  s3BucketApiGatewaySwagger:
+    Description: The s3 path for api gateway swagger , e.g s3://mybuket/swagger.yaml
+    Type: String
+  apigatewayName:
+    Description: The name of the Apigateway  endpoint
+    Type: String
+  apigatewayStage:
+    Description: The name of the Apigateway stage
+    Type: String
+
+
+Resources:
+
+  lambdaSageMaker:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        S3Bucket:
+          Ref: s3BucketLambdaCode
+        S3Key:
+          Ref: s3BucketLambdacodeKey
+      Description: Invokes sagemaker endpoint to predict peak energy price
+      Environment:
+        Variables:
+
+          sagemaker_endpoint:
+            Ref: lambdaEnvSagemakerEndpointName
+           
+      FunctionName: 
+        Ref: lambdaSagemakerFuncName
+      Handler: lambda_handler.lambda_handler
+      MemorySize: '128'
+      ReservedConcurrentExecutions: 100
+      Role:
+        Fn::GetAtt:
+        - LambdaRole
+        - Arn
+      Runtime: python3.6
+      Timeout: 120
+     
+      Tags:
+      - Key: StackName
+        Value:
+          Ref: AWS::StackName
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+      - PolicyName: S3GetCodeObjectPolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - s3:GetObject
+            Resource:
+            - Fn::Join:
+              - ''
+              - - 'arn:aws:s3:::'
+                - Fn::Join:
+                  - "/"
+                  - - Ref: s3BucketLambdaCode
+                    - Ref: s3BucketLambdacodeKey
+
+      - PolicyName: InvokeSagemakerEndpoint
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - sagemaker:InvokeEndpoint
+            Resource:
+            - Fn::Join:
+              - ''
+              - - 'arn:aws:sagemaker:'
+                - Ref: AWS::Region
+                - ":"
+                - Ref: AWS::AccountId
+                - ":endpoint/"
+                - Ref: lambdaEnvSagemakerEndpointName
+                - "*"
+
+           
+      RoleName:
+        Fn::Join:
+        - ''
+        - - Ref: AWS::StackName
+          - LambdaExecutionRole_LambdaRole
+
+  apiGateway:
+    Type: AWS::Serverless::Api
+
+    Properties:
+      Name: 
+        Ref: apigatewayName
+      StageName:
+        Ref: apigatewayStage
+      DefinitionBody:
+        'Fn::Transform':
+          Name: 'AWS::Include'
+          Parameters:
+            Location: 
+              'Fn::Sub': ${s3BucketApiGatewaySwagger}
+  apiGatewayCloudWatchRole: 
+    Type: "AWS::IAM::Role"
+    Properties: 
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - Effect: Allow
+            Principal: 
+              Service: 
+                - "apigateway.amazonaws.com"
+            Action: "sts:AssumeRole"
+      Path: "/"
+      ManagedPolicyArns: 
+      - "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
+  apiGatewayAccount: 
+    Type: "AWS::ApiGateway::Account"
+    DependsOn: apiGatewayCloudWatchRole
+    Properties: 
+      CloudWatchRoleArn: 
+        "Fn::GetAtt": 
+          - apiGatewayCloudWatchRole
+          - Arn    
+
+
+  apigatewayLambdaPermissionSageMaker:
+    Type: 'AWS::Lambda::Permission'
+    DependsOn: 
+      - lambdaSageMaker
+      - apiGateway
+    Properties:
+      FunctionName: 
+        'Fn::GetAtt': 
+          - lambdaSageMaker
+          - Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: apigateway.amazonaws.com
+      SourceArn: 
+        'Fn::Join':
+          - ""
+          - - 'Fn::Sub': "arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:"
+            - Ref: apiGateway
+            - /*
+
+Outputs:
+  apiGatewayEndPoint:
+    Description: The name of the api gateway end poiny
+    Value:
+      "Fn::Join":
+        - ""
+        - - Ref: apiGateway
+          - ".execute-api."
+          - Ref: AWS::Region
+          - ".amazonaws.com"
+          - "/"
+          - Ref: apigatewayStage
+    Export:
+      Name:
+        Fn::Join:
+        - ":"
+        - - Ref: AWS::StackName
+          - apiGatewayEndPoint
+  

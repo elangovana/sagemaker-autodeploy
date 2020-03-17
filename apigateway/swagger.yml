@@ -1,0 +1,69 @@
+---
+swagger: "2.0"
+info:
+  version: "2018-12-05T05:04:59Z"
+  title: "predict-peak-energy"
+host: "yqxjabmsj4.execute-api.ap-southeast-2.amazonaws.com"
+basePath:
+  'Fn::Sub': "/${apigatewayStage}"
+schemes:
+- "https"
+paths:
+  /predict-usage:
+    post:
+      produces:
+      - "application/json"
+      parameters:
+      - name: "model_name"
+        in: "query"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "200 response"
+          schema:
+            $ref: "#/definitions/Empty"
+      security:
+      - sigv4: []
+      x-amazon-apigateway-request-validator: "Validate body, query string parameters,\
+        \ and headers"
+      x-amazon-apigateway-integration:
+        uri:
+          'Fn::Sub': "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${lambdaSagemakerFuncName}/invocations"
+        responses:
+          default:
+            statusCode: "200"
+        passthroughBehavior: "when_no_match"
+        httpMethod: "POST"
+        contentHandling: "CONVERT_TO_TEXT"
+        type: "aws_proxy"
+securityDefinitions:
+  sigv4:
+    type: "apiKey"
+    name: "Authorization"
+    in: "header"
+    x-amazon-apigateway-authtype: "awsSigv4"
+definitions:
+  Empty:
+    type: "object"
+    title: "Empty Schema"
+x-amazon-apigateway-documentation:
+  version: "1"
+  createdDate: "2018-12-06T02:54:37Z"
+  documentationParts:
+  - location:
+      type: "MODEL"
+      name: "Empty"
+    properties:
+      title: "Empty Schema"
+  - location:
+      type: "RESPONSE"
+      path: "/predict-usage"
+      method: "POST"
+      statusCode: "200"
+    properties:
+      description: "200 response"
+x-amazon-apigateway-request-validators:
+  Validate body, query string parameters, and headers:
+    validateRequestParameters: true
+    validateRequestBody: true
